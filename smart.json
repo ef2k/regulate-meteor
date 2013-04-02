@@ -1,0 +1,9 @@
+{
+  "name": "regulate",
+  "description": "A versatile validation library that works on the client and server.",
+  "homepage": "https://eddflrs.github.com/regulate.js",
+  "author": "Eddie Flores (http://github.com/eddflrs)",
+  "version": "0.1.0",
+  "git": "https://github.com/eddflrs/regulate-meteor.git",
+  "packages": {}
+}

@@ -4,5 +4,5 @@ Package.describe({
 
 Package.on_use(function (api) {
     api.use(['jquery', 'underscore']);
-    api.add_files('regulate.min.js', ['client', 'server']);
+    api.add_files('regulate.js', ['client', 'server']);
 });

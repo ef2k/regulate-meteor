@@ -3,7 +3,7 @@
   "description": "Regulate.js for Meteor",
   "homepage": "http://eddflrs.github.com/regulate.js",
   "author": "Eddie Flores (http://github.com/eddflrs)",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "git": "https://github.com/eddflrs/regulate-meteor.git",
   "packages": {}
 }

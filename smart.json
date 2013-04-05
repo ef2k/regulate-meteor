@@ -3,7 +3,7 @@
   "description": "A versatile validation library for the client and server.",
   "homepage": "http://eddflrs.github.com/regulate.js",
   "author": "Eddie Flores (http://github.com/eddflrs)",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "git": "https://github.com/eddflrs/regulate-meteor.git",
   "packages": {}
 }

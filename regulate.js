@@ -235,10 +235,7 @@ if (this.jQuery === undefined) {
       message += (reqValue !== 1) ? "s" : ".";
       return Helpers.format(message, reqValue);
     },
-
-    callback: function (fieldName, fieldReqs, reqs, result) {
-      return _.escape(result);
-    }
+   
   };
 
   /*
@@ -342,6 +339,11 @@ if (this.jQuery === undefined) {
                 if (Messages[reqName]) {
                   displayName = fieldReqs.display_as || fieldName;
                   error = Messages[reqName](displayName, fieldReqs, self.reqs, testResult);
+                } else if (_.isString(testResult)){
+                  // If the validation returns a string and no Message handler
+                  // is defined for that rule than use the result string as 
+                  // error message. 
+                  error = _.escape(testResult);
                 } else {
                   error = reqName;
                 }

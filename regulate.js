@@ -237,7 +237,7 @@ if (this.jQuery === undefined) {
     },
 
     callback: function (fieldName, fieldReqs, reqs, result) {
-      return result;
+      return _.escape(result);
     }
   };
 

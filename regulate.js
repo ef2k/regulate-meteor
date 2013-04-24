@@ -138,6 +138,12 @@ if (this.jQuery === undefined) {
 
     max_selected: function (fieldValue, fieldReqs, fields) {
       return this.max_count('max_selected', fieldReqs, fields);
+    },
+
+    callback: function(fieldValue, rule){
+      if (!_.isFunction(rule.callback))
+        return false;
+      return rule.callback(fieldValue, rule);
     }
   };
 
@@ -228,7 +234,8 @@ if (this.jQuery === undefined) {
       message = "Select exactly {0} option";
       message += (reqValue !== 1) ? "s" : ".";
       return Helpers.format(message, reqValue);
-    }
+    },
+   
   };
 
   /*
@@ -328,10 +335,15 @@ if (this.jQuery === undefined) {
           if (reqName !== 'name' && Rules.hasOwnProperty(reqName)) {
             _.each(fieldVals, function (fieldVal) {
               var testResult = Rules[reqName](fieldVal, fieldReqs, formFields);
-              if (!testResult) {
+              if (testResult !== true) {
                 if (Messages[reqName]) {
                   displayName = fieldReqs.display_as || fieldName;
-                  error = Messages[reqName](displayName, fieldReqs, self.reqs);
+                  error = Messages[reqName](displayName, fieldReqs, self.reqs, testResult);
+                } else if (_.isString(testResult)){
+                  // If the validation returns a string and no Message handler
+                  // is defined for that rule than use the result string as 
+                  // error message. 
+                  error = _.escape(testResult);
                 } else {
                   error = reqName;
                 }

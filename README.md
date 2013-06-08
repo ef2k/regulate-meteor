@@ -115,3 +115,12 @@ Meteor.methods({
 });
 
 ```
+
+For more
+--------
+
+Have a look at the main project's repo for more details on what rules are supported and how to register custom validation requirements.
+
+http://github.com/eddflrs/regulate.js 
+
+For a meteor demo project: http://github.com/eddflrs/regulate-meteor

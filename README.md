@@ -123,4 +123,4 @@ Have a look at the main project's repo for more details on what rules are suppor
 
 http://github.com/eddflrs/regulate.js 
 
-For a meteor demo project: http://github.com/eddflrs/regulate-meteor
+For a meteor demo project: http://github.com/eddflrs/regulate-meteor-demo

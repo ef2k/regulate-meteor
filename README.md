@@ -14,6 +14,25 @@ Install via Meteorite
 $: mrt add regulate.js
 ```
 
+What it does
+------------
+Regulate allows you to use write your validation metrics once and use them on the client and server.
+
+**Features**
+
+* Error message insertions into the DOM (optional)
+* Validates `input type='file'` fields (file sizes and types)
+* Customizable rules
+* i18n support
+
+
+What it doesn't do
+------------------
+* Regulate does not submit form data, it merely validates it and reports back with a result.
+* Regulate supports validations for fields that should match (like for passwords), but doesn't support
+fields whose validation requirements depend on the value of other fields.
+
+
 Basic Usage
 -----------
 

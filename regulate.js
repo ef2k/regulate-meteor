@@ -3,7 +3,7 @@
  * http://github.com/eddflrs/regulate.js
  * @author Eddie Flores
  * @license MIT License
- * @version 0.1.3.3
+ * @version 0.1.3.4
  */
 
 /*jslint indent: 2 */
@@ -18,36 +18,30 @@ if (this.jQuery === undefined) {
   this.jQuery = {};
 }
 
-(function (root, _, $) {
+(function(root, _, $) {
   "use strict";
 
-  var Helpers, Rules, Messages, Form, Regulate;
+  var config, Rules, Messages, Form, Regulate, Translations, messagesCore, messages_en, helpers;
+
+  /*
+   * @private
+   * Used internally.
+   */
+  config = {
+    language: 'en'
+  };
 
   /*
    * @private
    * A namespace for helper functions.
    */
-  Helpers = {
-
-    /*
-     * Formats a string. ie: format("{0} {1}", "hello", "world") => hello world
-     */
-    format: function (str) {
-      var i, args, s = str;
-      args = Array.prototype.splice.call(arguments, 1);
-
-      for (i = 0; i < args.length; i += 1) {
-        s = s.replace("{" + i + "}", args[i]);
-      }
-
-      return s;
-    },
+  helpers = {
 
     /*
      * Returns a human readable conversion of the supplied bytes.
      * Thanks to thomasR @thomasethajar.
      */
-    niceBytes: function (bytes) {
+    niceBytes: function(bytes) {
       var i, sizes = ['bytes', 'KB', 'MB', 'GB', 'TB'];
       if (bytes === 0) {
         return '0 bytes';
@@ -66,28 +60,28 @@ if (this.jQuery === undefined) {
    */
   Rules = {
 
-    max_length: function (str, rule) {
+    max_length: function(str, rule) {
       return rule.max_length ? (str.length <= rule.max_length) : false;
     },
 
-    min_length: function (str, rule) {
+    min_length: function(str, rule) {
       return rule.min_length ? (str.length >= rule.min_length) : false;
     },
 
-    exact_length: function (str, rule) {
+    exact_length: function(str, rule) {
       return rule.exact_length ? (str.length === rule.exact_length) : false;
     },
 
-    email: function (str) {
+    email: function(str) {
       var re = /^([a-zA-Z0-9_\.\-])+\@(([a-zA-Z0-9\-])+\.)+([a-zA-Z0-9]{2,4})+$/;
       return re.test(str);
     },
 
-    match_field: function (fieldValue, fieldReqs, fields) {
+    match_field: function(fieldValue, fieldReqs, fields) {
       var targetField, result = false;
       if (fieldReqs.match_field) {
         targetField = fieldReqs.match_field;
-        _.each(fields, function (field) {
+        _.each(fields, function(field) {
           if (field.name === targetField) {
             result = field.value === fieldValue;
           }
@@ -96,75 +90,74 @@ if (this.jQuery === undefined) {
       return result;
     },
 
-    min_count: function (fieldName, fieldReqs, fields) {
+    min_count: function(fieldName, fieldReqs, fields) {
       if (!fieldReqs[fieldName]) {
         return false;
       }
 
-      var items = _.filter(fields, function (field) {
+      var items = _.filter(fields, function(field) {
         return field.name === fieldReqs.name;
       });
 
       return items.length >= fieldReqs[fieldName];
     },
 
-    max_count: function (fieldName, fieldReqs, fields) {
+    max_count: function(fieldName, fieldReqs, fields) {
       if (!fieldReqs[fieldName]) {
         return false;
       }
 
-      var items = _.filter(fields, function (field) {
+      var items = _.filter(fields, function(field) {
         return field.name === fieldReqs.name;
       });
 
       return items.length <= fieldReqs[fieldName];
     },
 
-    exact_count: function (fieldName, fieldReqs, fields) {
+    exact_count: function(fieldName, fieldReqs, fields) {
       if (!fieldReqs[fieldName]) {
         return false;
       }
 
-      var items = _.filter(fields, function (field) {
+      var items = _.filter(fields, function(field) {
         return field.name === fieldReqs.name;
       });
 
       return items.length === fieldReqs[fieldName];
     },
 
-    min_checked: function (fieldValue, fieldReqs, fields) {
+    min_checked: function(fieldValue, fieldReqs, fields) {
       return this.min_count('min_checked', fieldReqs, fields);
     },
 
-    exact_checked: function (fieldValue, fieldReqs, fields) {
+    exact_checked: function(fieldValue, fieldReqs, fields) {
       return this.exact_count('exact_checked', fieldReqs, fields);
     },
 
-    max_checked: function (fieldValue, fieldReqs, fields) {
+    max_checked: function(fieldValue, fieldReqs, fields) {
       return this.max_count('max_checked', fieldReqs, fields);
     },
 
-    min_selected: function (fieldValue, fieldReqs, fields) {
+    min_selected: function(fieldValue, fieldReqs, fields) {
       return this.min_count('min_selected', fieldReqs, fields);
     },
 
-    exact_selected: function (fieldValue, fieldReqs, fields) {
+    exact_selected: function(fieldValue, fieldReqs, fields) {
       return this.exact_count('exact_selected', fieldReqs, fields);
     },
 
-    max_selected: function (fieldValue, fieldReqs, fields) {
+    max_selected: function(fieldValue, fieldReqs, fields) {
       return this.max_count('max_selected', fieldReqs, fields);
     },
 
-    max_size: function (fieldValue, fieldReqs) {
+    max_size: function(fieldValue, fieldReqs) {
       return fieldValue <= fieldReqs.max_size;
     },
 
-    accepted_files: function (fieldValue, fieldReqs, fields) {
-      var i, fieldObj, uploadedFileType,
-        acceptedFiles = fieldReqs.accepted_files;
+    accepted_files: function(fieldValue, fieldReqs, fields) {
+      var i, fieldObj, uploadedFileType, acceptedFiles = fieldReqs.accepted_files;
 
-      fieldObj = _.filter(fields, function (field) {
+      fieldObj = _.filter(fields, function(field) {
         return field.name === fieldReqs.name;
       });
 
@@ -189,101 +182,99 @@ if (this.jQuery === undefined) {
 
   /*
    * @private
-   * The following messages are generated after a failed validation.
+   * The following messages in english are used by default.
    */
-  Messages = {
-    required: function (fieldName) {
-      var message, lastChar, verb;
-      message = "{0} {1} required.";
+  messages_en = {
+    required: function(fieldName, fieldReqs) {
+      var lastChar, verb;
       lastChar = fieldName.charAt(fieldName.length - 1);
       verb = (lastChar === 's') ? 'are' : 'is';
-      return Helpers.format(message, fieldName, verb);
+      return fieldName + " " + verb + " required.";
     },
 
-    email: function (fieldName) {
-      var message = "{0} must be a valid email.";
-      return Helpers.format(message, fieldName);
+    email: function(fieldName, fieldReqs) {
+      return fieldName + " must be a valid email.";
     },
 
-    match_field: function (fieldName, fieldReqs, formReqs) {
-      var matchName, displayName, matchField, message = "{0} must match {1}.";
+    match_field: function(fieldName, fieldReqs, formReqs) {
+      var matchName, displayName, matchField;
       matchField = fieldReqs.match_field;
       matchName = formReqs[matchField].display_as || matchField;
       displayName = fieldReqs.display_as || fieldReqs.name;
-      return Helpers.format(message, displayName, matchName);
+      return displayName + " must match " + matchName;
     },
 
-    max_length: function (fieldName, fieldReqs) {
-      var message = "{0} must have a maximum length of {1}.";
-      return Helpers.format(message, fieldName, fieldReqs.max_length);
+    max_length: function(fieldName, fieldReqs) {
+      var maxLength = fieldReqs.max_length;
+      return fieldName + " must have a maximum length of " + maxLength + ".";
     },
 
-    min_length: function (fieldName, fieldReqs) {
-      var message = "{0} must have a minimum length of {1}.";
-      return Helpers.format(message, fieldName, fieldReqs.min_length);
+    min_length: function(fieldName, fieldReqs) {
+      var minLength = fieldReqs.min_length;
+      return fieldName + " must have a minimum length of " + minLength + ".";
     },
 
-    exact_length: function (fieldName, fieldReqs) {
-      var message = "{0} must have an exact length of {1}.";
-      return Helpers.format(message, fieldName, fieldReqs.exact_length);
+    exact_length: function(fieldName, fieldReqs) {
+      var exactLength = fieldReqs.exact_length;
+      return fieldName + " must have an exact length of " + exactLength + ".";
     },
 
-    min_checked: function (fieldName, fieldReqs) {
+    min_checked: function(fieldName, fieldReqs) {
       var reqValue, message;
       reqValue = fieldReqs.min_checked;
-      message = "Check atleast {0} checkbox";
-      message += (reqValue !== 1) ? "es." : ".";
-      return Helpers.format(message, reqValue);
-    },
-
-    max_checked: function (fieldName, fieldReqs) {
-      var reqValue, message;
-      reqValue = fieldReqs.max_checked;
-      message = "Check a maximum of {0} checkbox";
-      message += (reqValue !== 1) ? "es." : ".";
-      return Helpers.format(message, reqValue);
-    },
-
-    exact_checked: function (fieldName, fieldReqs) {
-      var reqValue, message;
-      reqValue = fieldReqs.exact_checked;
-      message = "Check exactly {0} checkboxes";
-      message += (reqValue !== 1) ? "es." : ".";
-      return Helpers.format(message, reqValue);
-    },
-
-    min_selected: function (fieldName, fieldReqs) {
-      var reqValue, message;
-      reqValue = fieldReqs.min_selected;
-      message = "Select atleast {0} option";
-      message += (reqValue !== 1) ? "s." : ".";
-      return Helpers.format(message, reqValue);
-    },
-
-    max_selected: function (fieldName, fieldReqs) {
-      var reqValue, message;
-      reqValue = fieldReqs.max_selected;
-      message = "Select a maximum of {0} option";
-      message += (reqValue !== 1) ? "s." : ".";
-      return Helpers.format(message, reqValue);
-    },
-
-    exact_selected: function (fieldName, fieldReqs) {
-      var reqValue, message;
-      reqValue = fieldReqs.exact_selected;
-      message = "Select exactly {0} option";
-      message += (reqValue !== 1) ? "s." : ".";
-      return Helpers.format(message, reqValue);
-    },
-
-    max_size: function (fieldName, fieldReqs) {
-      var reqValue, message;
-      reqValue = fieldReqs.max_size;
-      message = "File cannot be larger than " + Helpers.niceBytes(reqValue) + ".";
+      message = "Check atleast " + reqValue + " checkbox";
+      message += (reqValue !== 1) ? "es" : ".";
       return message;
     },
 
-    accepted_files: function (fieldName, fieldReqs) {
+    max_checked: function(fieldName, fieldReqs) {
+      var reqValue, message;
+      reqValue = fieldReqs.max_checked;
+      message = "Check a maximum of " + reqValue + " checkbox";
+      message += (reqValue !== 1) ? "es" : ".";
+      return message;
+    },
+
+    exact_checked: function(fieldName, fieldReqs) {
+      var reqValue, message;
+      reqValue = fieldReqs.exact_checked;
+      message = "Check exactly " + reqValue + " checkbox";
+      message += (reqValue !== 1) ? "es" : ".";
+      return message;
+    },
+
+    min_selected: function(fieldName, fieldReqs) {
+      var reqValue, message;
+      reqValue = fieldReqs.min_selected;
+      message = "Select atleast " + reqValue + " option";
+      message += (reqValue !== 1) ? "s" : ".";
+      return message;
+    },
+
+    max_selected: function(fieldName, fieldReqs) {
+      var reqValue, message;
+      reqValue = fieldReqs.max_selected;
+      message = "Select a maximum of " + reqValue + " option";
+      message += (reqValue !== 1) ? "s" : ".";
+      return message;
+    },
+
+    exact_selected: function(fieldName, fieldReqs) {
+      var reqValue, message;
+      reqValue = fieldReqs.exact_selected;
+      message = "Select exactly " + reqValue + " option";
+      message += (reqValue !== 1) ? "s" : ".";
+      return message;
+    },
+
+    max_size: function(fieldName, fieldReqs) {
+      var reqValue, message;
+      reqValue = fieldReqs.max_size;
+      message = "File cannot be larger than " + helpers.niceBytes(reqValue) + ".";
+      return message;
+    },
+
+    accepted_files: function(fieldName, fieldReqs) {
       var acceptedTypes = fieldReqs.accepted_files.split('|'),
         message = "Not a valid file type. ";
       if (acceptedTypes.length > 1) {
@@ -298,14 +289,37 @@ if (this.jQuery === undefined) {
 
   /*
    * @private
+   * Stores the message translations by their corresponding language.
+   */
+  Translations = {
+    en: messages_en
+  };
+
+  /*
+   * @private
+   * Stores message functions that should always be included with the Messages,
+   * regardless of current translation.
+   */
+  messagesCore = {};
+
+  /*
+   * @public
+   * Messages are called after a failed validation.
+   * Note: Messages defaults to english (messages_en).
+   */
+  Messages = {};
+
+  /*
+   * @private
    * @constructor
    * Represents a form with validation requirements.
    */
-  Form = function (name, requirements) {
+  Form = function(name, requirements) {
     this.name = name;
     this.cb = undefined;
     this.errorElems = {};
     this.isBrowser = false;
+    this.translations = {};
     this.reqs = this.transformReqs(requirements);
   };
 
@@ -313,10 +327,10 @@ if (this.jQuery === undefined) {
    * @private
    * Displays the error messages in the supplied DOM elements.
    */
-  Form.prototype.displayErrors = function (errors) {
+  Form.prototype.displayErrors = function(errors) {
     var self = this;
 
-    _.each(errors, function (errorMsgs, errorName) {
+    _.each(errors, function(errorMsgs, errorName) {
       var i, ul, errorElem;
 
       errorElem = self.errorElems[errorName] || '';
@@ -336,10 +350,34 @@ if (this.jQuery === undefined) {
    * @private
    * Calls the registered onSubmit callback.
    */
-  Form.prototype.notifySubmission = function (error, data) {
+  Form.prototype.notifySubmission = function(error, data) {
     if (this.cb) {
       this.cb(error, data);
     }
+  };
+
+  /*
+   * @public
+   * Adds the given translation to the form.
+   * @param langName String - Identifier for the language. ie: en, es, it, etc.
+   * @param translation Object - Should contain a map of the fieldName to the
+   *  translated display name. ie: {fieldName1: 'Field Name 1', ...}
+   */
+  Form.prototype.addTranslation = function(langName, translation) {
+    this.translations[langName] = translation;
+  };
+
+  /*
+   * @public
+   * Adds the given translations to the form.
+   * @param translations Array - Translation objects should be of the following
+   * form: {fieldName: 'Field Name Translated'}
+   */
+  Form.prototype.addTranslations = function(translations) {
+    var self = this;
+    _.each(translations, function(translation, langName) {
+      self.addTranslation(langName, translation);
+    });
   };
 
   /*
@@ -352,8 +390,10 @@ if (this.jQuery === undefined) {
    *    @argument error
    *    @agument data
    */
-  Form.prototype.validate = function (formFields, cb) {
-    var self = this, errors = {}, transformedFieldValues = {};
+  Form.prototype.validate = function(formFields, cb) {
+    var self = this,
+      errors = {},
+      transformedFieldValues = {};
 
     if (!formFields) {
       throw new Error("Field values must be supplied in order to validate.");
@@ -363,10 +403,11 @@ if (this.jQuery === undefined) {
       self.cb = cb;
     }
 
-    // Restructure the form values so it's easier to check against the rules
+    // Restructure the form values so it's easier to check against the rules.
     // ie: {fieldName: [fieldVal, ...], ...}
-    _.each(formFields, function (formField) {
-      var name = formField.name, value = formField.value;
+    _.each(formFields, function(formField) {
+      var name = formField.name,
+        value = formField.value;
 
       if (_.isString(value)) {
         value = value.trim();
@@ -379,8 +420,14 @@ if (this.jQuery === undefined) {
     });
 
     // Check form values against the validation requirements.
-    _.each(self.reqs, function (fieldReqs, fieldName) {
-      var fieldVals, error, displayName, fieldErrors = [];
+    _.each(self.reqs, function(fieldReqs, fieldName) {
+      var fieldVals, error, displayName, fieldErrors = [],
+        translation = self.translations[config.language];
+
+      // Inject the custom display_as for the current language if available.
+      if (translation && translation[fieldName]) {
+        fieldReqs.display_as = translation[fieldName];
+      }
 
       // Compensate for any missing form values (checkboxes, multiselects).
       if (!transformedFieldValues[fieldName]) {
@@ -389,18 +436,18 @@ if (this.jQuery === undefined) {
 
       fieldVals = transformedFieldValues[fieldName];
 
+      displayName = fieldReqs.display_as || fieldName;
+
       if (_.isEmpty(fieldVals)) {
-        displayName = fieldReqs.display_as || fieldName;
         error = Messages.required(displayName, fieldReqs, self.reqs);
         fieldErrors.push(error);
       } else {
-        _.each(fieldReqs, function (reqVal, reqName) {
+        _.each(fieldReqs, function(reqVal, reqName) {
           if (reqName !== 'name' && Rules.hasOwnProperty(reqName)) {
-            _.each(fieldVals, function (fieldVal) {
+            _.each(fieldVals, function(fieldVal) {
               var testResult = Rules[reqName](fieldVal, fieldReqs, formFields);
               if (!testResult) {
                 if (Messages[reqName]) {
-                  displayName = fieldReqs.display_as || fieldName;
                   error = Messages[reqName](displayName, fieldReqs, self.reqs);
                 } else {
                   error = reqName;
@@ -435,17 +482,25 @@ if (this.jQuery === undefined) {
    * Transforms the user requirements into a data structure that's easier to
    * work with. ie: {fieldName1: [{fieldRequirements}, ...], fieldName2: ...}
    */
-  Form.prototype.transformReqs = function (userRequirements) {
-    var self = this, transformedReqs = {};
+  Form.prototype.transformReqs = function(userRequirements) {
+    var self = this,
+      transformedReqs = {},
+      lang;
+    lang = this.translations[config.language] = {};
 
-    _.each(userRequirements, function (userReq) {
-      var reqName, fieldReq = {}, fieldName = userReq.name;
+    _.each(userRequirements, function(userReq) {
+      var reqName, fieldReq = {},
+        fieldName = userReq.name,
+        reqValue;
       for (reqName in userReq) {
         if (userReq.hasOwnProperty(reqName)) {
+          reqValue = userReq[reqName];
           if (reqName === 'display_error') {
-            self.errorElems[fieldName] = userReq[reqName];
+            self.errorElems[fieldName] = reqValue;
+          } else if (reqName === 'display_as') {
+            lang[fieldName] = reqValue;
           } else {
-            fieldReq[reqName] = userReq[reqName];
+            fieldReq[reqName] = reqValue;
           }
         }
       }
@@ -459,16 +514,16 @@ if (this.jQuery === undefined) {
 
   /*
    * @private
-   * Serializes the form data into an array, this includes `input type=file`
-   * elements which are ignored by jQuery's serializeArray.
-   * @param formElem Element - The Element object representing the form.
+   * Serializes the form data into an array, this includes metadata of
+   * `input type=file`elements which are ignored by jQuery's serializeArray.
+   * @param formElem Element - The DOM Element object representing the form.
    */
   function getFormData(formElem) {
     var formData = $(formElem).serializeArray(),
       fileInputs = $(formElem).find("input[type=file]"),
       files = [];
 
-    fileInputs.each(function () {
+    fileInputs.each(function() {
       var fileSize, fileType, fieldName = this.name;
 
       if (this.files.length > 0) {
@@ -478,16 +533,20 @@ if (this.jQuery === undefined) {
         fileSize = 0;
         fileType = '';
       }
-      files.push({name: fieldName, value: fileSize, fileType: fileType, files: this.files});
+      files.push({
+        name: fieldName,
+        value: fileSize,
+        fileType: fileType,
+        files: this.files
+      });
     });
 
-    _.each(files, function (fileObj) {
+    _.each(files, function(fileObj) {
       formData.push(fileObj);
     });
 
     return formData;
   }
-
 
   /*
    * @public
@@ -496,16 +555,16 @@ if (this.jQuery === undefined) {
    *    @argument error
    *    @agument data
    */
-  Form.prototype.onSubmit = function (cb) {
+  Form.prototype.onSubmit = function(cb) {
     var self = this;
     self.cb = cb;
     self.isBrowser = true;
 
-    $(root.document).on('submit', '#' + self.name, function (e) {
+    $(root.document).on('submit', '#' + self.name, function(e) {
       e.preventDefault();
 
       // Clear previous errors
-      _.each(self.errorElems, function (elem) {
+      _.each(self.errorElems, function(elem) {
         $(elem).html('');
       });
 
@@ -521,12 +580,63 @@ if (this.jQuery === undefined) {
    * @param name String - The name of the form to be validated.
    * @param formRules - Array - The required rules for validation.
    */
-  Regulate = function (name, formRules) {
+  Regulate = function(name, formRules) {
     if (Regulate[name]) {
       throw new Error(name + 'is already being validated');
     }
     Regulate[name] = new Form(name, formRules);
   };
+
+  /*
+   * @public
+   * Registers an user defined rule.
+   * @param ruleName String - The name of the rule.
+   * @param testFn Function - The function to be executed during validation.
+   *    @return A boolean value that represents the validation result.
+   */
+  Regulate.registerRule = function(ruleName, testFn) {
+    if (Rules[ruleName]) {
+      throw new Error(ruleName + " is already defined as a rule.");
+    }
+    Rules[ruleName] = testFn;
+  };
+
+  /*
+   * @public
+   * Adds the given translation to the i18n languages.
+   */
+  Regulate.addTranslation = function(langName, translation) {
+    Translations[langName] = translation;
+  };
+
+  /*
+   * @public
+   * Adds the given translations to the i18n languages.
+   */
+  Regulate.addTranslations = function(translations) {
+    var self = this;
+    _.each(translations, function(translation, langName) {
+      self.addTranslation(langName, translation);
+    });
+  };
+
+  /*
+   * @public
+   * Use the corresponding message translations for the requested language.
+   */
+  Regulate.useTranslation = function(langName) {
+    if (!Translations[langName]) {
+      throw new Error(langName + ' translation not found.');
+    }
+    config.language = langName;
+    Messages = Translations[langName];
+    _.each(messagesCore, function(msgFn, ruleName) {
+      Messages[ruleName] = msgFn;
+    });
+  };
+
+  /* Use english by default */
+  Regulate.useTranslation('en');
 
   /*
    * @public
@@ -542,17 +652,9 @@ if (this.jQuery === undefined) {
 
   /*
    * @public
-   * Registers an user defined rule.
-   * @param ruleName String - The name of the rule.
-   * @param testFn Function - The function to be executed during validation.
-   *    @return A boolean value that represents the validation result.
+   * Expose the translations.
    */
-  Regulate.registerRule = function (ruleName, testFn) {
-    if (Regulate.Rules[ruleName]) {
-      throw new Error(ruleName + " is already defined as a rule.");
-    }
-    Regulate.Rules[ruleName] = testFn;
-  };
+  Regulate.Translations = Translations;
 
   root.Regulate = Regulate;
 

@@ -4,7 +4,6 @@ Regulate for Meteor
 A versatile validation library for the client and server.
 
 View the main project here: http://github.com/eddflrs/regulate.js
-
 View a sample meteor project here: http://github.com/eddflrs/regulate-meteor-demo
 
 Install via Meteorite
@@ -16,7 +15,7 @@ $: mrt add regulate.js
 
 What it does
 ------------
-Regulate allows you to use write your validation metrics once and use them on the client and server.
+Regulate allows you to write your validation requirements once and use them on the client and server.
 
 **Features**
 

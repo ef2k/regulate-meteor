@@ -38,7 +38,7 @@ Basic Usage
 The form:
 
 ```html
-<form id="sampleForm">
+<form id="registerUser">
   <input type='text' name='username'/>
   <p id='username-error'></p>
 

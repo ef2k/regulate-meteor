@@ -14,6 +14,13 @@
 /*global _ */
 /*global jQuery */
 
+//.trim() not in IE8
+if(typeof String.prototype.trim !== 'function') {
+  String.prototype.trim = function() {
+    return this.replace(/^\s+|\s+$/g, '');
+  }
+}
+
 if (this.jQuery === undefined) {
   this.jQuery = {};
 }
